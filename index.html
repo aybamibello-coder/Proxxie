@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proxxie — Lead Intelligence</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --paper: #F3F1EC;
+    --paper-card: #FFFFFF;
+    --ink: #1C2430;
+    --ink-soft: #5B6472;
+    --line: #D7D2C4;
+    --dry: #2F8F4E;      /* dry / healthy / fast response */
+    --dry-bg: #E7F3EA;
+    --caution: #D69A2D;  /* caution / slowing down */
+    --caution-bg: #FBF1DE;
+    --wet: #B5443A;      /* still wet / cold lead */
+    --wet-bg: #F7E7E5;
+    --mono: 'DM Mono', 'SFMono-Regular', Menlo, monospace;
+    --display: 'Space Grotesk', 'Arial Narrow', sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  header {
+    padding: 28px 24px 20px;
+    border-bottom: 2px solid var(--ink);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .brand {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+  }
+
+  .brand span { color: var(--ink-soft); font-weight: 500; font-size: 13px; display: block; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+
+  .meta {
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  section { margin-bottom: 36px; }
+
+  .section-label {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    border-top: 1px dashed var(--line);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+  }
+
+  .ticket {
+    background: var(--paper-card);
+    border: 1.5px solid var(--ink);
+    border-radius: 2px;
+    position: relative;
+    padding: 16px 16px 14px;
+  }
+
+  .ticket::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: -1px;
+    width: 0;
+    border-left: 2px dashed var(--line);
+  }
+
+  .ticket-source {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    text-transform: capitalize;
+    margin-bottom: 10px;
+  }
+
+  .ticket-stat {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .ticket-stat-label {
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  .ticket-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--line);
+    font-size: 12.5px;
+  }
+
+  .ticket-row span:last-child { font-weight: 500; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--paper-card);
+    border: 1.5px solid var(--ink);
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+
+  th {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    background: var(--paper);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAF9F5; cursor: pointer; }
+
+  .gauge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .gauge-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .gauge.dry { background: var(--dry-bg); color: var(--dry); }
+  .gauge.dry .gauge-dot { background: var(--dry); }
+  .gauge.caution { background: var(--caution-bg); color: var(--caution); }
+  .gauge.caution .gauge-dot { background: var(--caution); }
+  .gauge.wet { background: var(--wet-bg); color: var(--wet); }
+  .gauge.wet .gauge-dot { background: var(--wet); }
+
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--ink-soft);
+    border: 1.5px dashed var(--line);
+  }
+
+  .empty-title {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+
+  .spend-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: var(--paper-card);
+    border: 1.5px solid var(--ink);
+    padding: 14px;
+  }
+
+  .spend-form input, .spend-form select {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .spend-form button {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 9px 16px;
+    cursor: pointer;
+  }
+
+  .spend-form button:hover { opacity: 0.85; }
+
+  /* modal for updating a lead */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(28,36,48,0.4);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--paper-card);
+    border: 1.5px solid var(--ink);
+    padding: 22px;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .modal h3 {
+    font-family: var(--display);
+    margin: 0 0 4px;
+    font-size: 17px;
+  }
+  .modal p.sub { margin: 0 0 16px; color: var(--ink-soft); font-size: 12px; }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin-bottom: 5px;
+  }
+  .field select, .field input {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .modal-actions button {
+    flex: 1;
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    padding: 10px;
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    background: var(--paper-card);
+    color: var(--ink);
+  }
+  .modal-actions button.primary { background: var(--ink); color: var(--paper); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ticket, tr { transition: background 0.15s ease; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">PROXXIE<span>Lead Source Intelligence</span></div>
+  <div class="meta" id="lastUpdated">Loading…</div>
+</header>
+
+<main>
+
+  <section>
+    <div class="section-label">Cost per booked job</div>
+    <div class="cards" id="sourceCards"></div>
+  </section>
+
+  <section>
+    <div class="section-label">Monthly spend by source</div>
+    <div class="spend-form">
+      <select id="spendSource">
+        <option value="angi">Angi</option>
+        <option value="thumbtack">Thumbtack</option>
+        <option value="missed_call">Missed Call</option>
+        <option value="website">Website</option>
+        <option value="google_lsa">Google LSA</option>
+        <option value="referral">Referral</option>
+      </select>
+      <input type="month" id="spendMonth">
+      <input type="number" id="spendAmount" placeholder="Amount spent ($)" step="0.01" min="0">
+      <button onclick="saveSpend()">Save spend</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-label">Leads</div>
+    <div id="leadsWrap"></div>
+  </section>
+
+</main>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Update lead</h3>
+    <p class="sub" id="modalSub"></p>
+    <div class="field">
+      <label>Status</label>
+      <select id="editStatus">
+        <option value="new">New</option>
+        <option value="contacted">Contacted</option>
+        <option value="booked">Booked</option>
+        <option value="lost">Lost</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Job value ($)</label>
+      <input type="number" id="editJobValue" step="0.01" min="0" placeholder="e.g. 4500">
+    </div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button class="primary" onclick="saveLead()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://kpzsocqnjnzfxptktzqo.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_orCuDA0Ib1Z3q_Nznd68-w_ItH85qXQ';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let leads = [];
+  let spend = [];
+  let editingId = null;
+
+  function currentMonth() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function minutesSince(dateStr) {
+    return (Date.now() - new Date(dateStr).getTime()) / 60000;
+  }
+
+  function gaugeFor(lead) {
+    if (lead.status === 'booked') return { cls: 'dry', label: 'Booked' };
+    if (lead.status === 'lost') return { cls: 'wet', label: 'Lost' };
+    const mins = lead.contacted_at ? minutesSince(lead.received_at) : minutesSince(lead.received_at);
+    if (lead.status === 'contacted') {
+      const responseMins = (new Date(lead.contacted_at) - new Date(lead.received_at)) / 60000;
+      if (responseMins <= 15) return { cls: 'dry', label: 'Fast response' };
+      if (responseMins <= 60) return { cls: 'caution', label: 'Slow response' };
+      return { cls: 'wet', label: 'Late response' };
+    }
+    // still 'new' / unactioned
+    if (mins <= 15) return { cls: 'caution', label: 'Awaiting response' };
+    return { cls: 'wet', label: 'Going cold' };
+  }
+
+  async function loadData() {
+    const { data: leadsData, error: leadsErr } = await sb
+      .from('leads')
+      .select('*')
+      .order('received_at', { ascending: false });
+
+    const { data: spendData, error: spendErr } = await sb
+      .from('source_spend')
+      .select('*');
+
+    if (leadsErr || spendErr) {
+      document.getElementById('leadsWrap').innerHTML =
+        '<div class="empty"><div class="empty-title">Could not load data</div>' +
+        (leadsErr?.message || spendErr?.message || '') + '</div>';
+      return;
+    }
+
+    leads = leadsData || [];
+    spend = spendData || [];
+    render();
+  }
+
+  function render() {
+    document.getElementById('lastUpdated').textContent =
+      'Updated ' + new Date().toLocaleString();
+
+    renderCards();
+    renderLeads();
+  }
+
+  function renderCards() {
+    const sources = [...new Set(leads.map(l => l.source))];
+    const wrap = document.getElementById('sourceCards');
+
+    if (sources.length === 0) {
+      wrap.innerHTML = '<div class="empty"><div class="empty-title">No leads yet</div>Once leads start flowing in from n8n, cost-per-job for each source will show up here.</div>';
+      return;
+    }
+
+    const month = currentMonth();
+
+    wrap.innerHTML = sources.map(source => {
+      const sourceLeads = leads.filter(l => l.source === source);
+      const booked = sourceLeads.filter(l => l.status === 'booked');
+      const totalValue = booked.reduce((s, l) => s + (Number(l.job_value) || 0), 0);
+      const spendRow = spend.find(s => s.source === source && s.month === month);
+      const monthSpend = spendRow ? Number(spendRow.amount_spent) : 0;
+      const costPerJob = booked.length > 0 ? (monthSpend / booked.length) : null;
+
+      return `
+        <div class="ticket">
+          <div class="ticket-source">${source.replace('_', ' ')}</div>
+          <div class="ticket-stat">${costPerJob !== null ? '$' + costPerJob.toFixed(0) : '—'}</div>
+          <div class="ticket-stat-label">Cost per booked job</div>
+          <div class="ticket-row"><span>Leads this month</span><span>${sourceLeads.length}</span></div>
+          <div class="ticket-row"><span>Booked</span><span>${booked.length}</span></div>
+          <div class="ticket-row"><span>Job value closed</span><span>$${totalValue.toFixed(0)}</span></div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderLeads() {
+    const wrap = document.getElementById('leadsWrap');
+
+    if (leads.length === 0) {
+      wrap.innerHTML = '<div class="empty"><div class="empty-title">Nothing logged yet</div>Leads captured from Angi, Thumbtack, and missed calls will appear here as they come in.</div>';
+      return;
+    }
+
+    const rows = leads.map(lead => {
+      const g = gaugeFor(lead);
+      const received = new Date(lead.received_at).toLocaleString();
+      return `
+        <tr onclick="openModal(${lead.id})">
+          <td>${lead.source.replace('_', ' ')}</td>
+          <td>${lead.contact_name || lead.contact_phone || '—'}</td>
+          <td>${received}</td>
+          <td><span class="gauge ${g.cls}"><span class="gauge-dot"></span>${g.label}</span></td>
+          <td>${lead.job_value ? '$' + Number(lead.job_value).toFixed(0) : '—'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Contact</th><th>Received</th><th>Status</th><th>Job value</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function openModal(id) {
+    const lead = leads.find(l => l.id === id);
+    if (!lead) return;
+    editingId = id;
+    document.getElementById('modalSub').textContent =
+      lead.source.replace('_', ' ') + ' · ' + (lead.contact_name || lead.contact_phone || 'no contact info');
+    document.getElementById('editStatus').value = lead.status;
+    document.getElementById('editJobValue').value = lead.job_value || '';
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+    editingId = null;
+  }
+
+  async function saveLead() {
+    if (!editingId) return;
+    const status = document.getElementById('editStatus').value;
+    const jobValue = document.getElementById('editJobValue').value;
+    const lead = leads.find(l => l.id === editingId);
+
+    const update = {
+      status,
+      job_value: jobValue ? Number(jobValue) : null,
+      updated_at: new Date().toISOString()
+    };
+    if (status === 'contacted' && !lead.contacted_at) {
+      update.contacted_at = new Date().toISOString();
+    }
+
+    const { error } = await sb.from('leads').update(update).eq('id', editingId);
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    closeModal();
+    loadData();
+  }
+
+  async function saveSpend() {
+    const source = document.getElementById('spendSource').value;
+    const monthInput = document.getElementById('spendMonth').value; // YYYY-MM
+    const amount = document.getElementById('spendAmount').value;
+
+    if (!monthInput || !amount) { alert('Pick a month and enter an amount.'); return; }
+
+    const { error } = await sb.from('source_spend').upsert({
+      source, month: monthInput, amount_spent: Number(amount)
+    }, { onConflict: 'source,month' });
+
+    if (error) { alert('Could not save: ' + error.message); return; }
+
+    document.getElementById('spendAmount').value = '';
+    loadData();
+  }
+
+  document.getElementById('spendMonth').value = currentMonth();
+  document.getElementById('overlay').addEventListener('click', (e) => {
+    if (e.target.id === 'overlay') closeModal();
+  });
+
+  loadData();
+  setInterval(loadData, 60000); // refresh every minute
+</script>
+
+</body>
+</html>
