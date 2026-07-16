@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Proxxie — Lead Intelligence</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
   :root {
     --paper: #F3F1EC;
@@ -307,6 +308,40 @@
   @media (prefers-reduced-motion: no-preference) {
     .ticket, tr { transition: background 0.15s ease; }
   }
+
+  .map-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .map-row:last-child { border-bottom: none; }
+  .map-row label {
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .map-row select {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .import-preview {
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-top: 4px;
+  }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12.5px;
+  }
+  .checkbox-row input { width: auto; }
 </style>
 </head>
 <body>
@@ -341,6 +376,14 @@
   </section>
 
   <section>
+    <div class="section-label">Import customers (CSV)</div>
+    <div class="spend-form" style="flex-direction:column; align-items:stretch;">
+      <input type="file" id="csvFile" accept=".csv" onchange="handleCsvSelect(event)">
+      <div id="importMapping" style="display:none;"></div>
+    </div>
+  </section>
+
+  <section id="leadsSection">
     <div class="section-label">Leads</div>
     <div id="leadsWrap"></div>
   </section>
@@ -574,6 +617,151 @@
     if (error) { alert('Could not save: ' + error.message); return; }
 
     document.getElementById('spendAmount').value = '';
+    loadData();
+  }
+
+  const LEAD_FIELDS = [
+    { key: 'contact_name', label: 'Contact name' },
+    { key: 'contact_phone', label: 'Phone' },
+    { key: 'contact_email', label: 'Email' },
+    { key: 'source', label: 'Source' },
+    { key: 'loss_type', label: 'Loss type' },
+    { key: 'assigned_to', label: 'Assigned to' },
+    { key: 'job_value', label: 'Job value' },
+    { key: 'status', label: 'Status' },
+    { key: 'received_at', label: 'Date received' },
+    { key: 'job_completed_at', label: 'Date completed' },
+    { key: 'notes', label: 'Notes' }
+  ];
+
+  let csvRows = [];
+  let csvHeaders = [];
+
+  function handleCsvSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        csvRows = results.data;
+        csvHeaders = results.meta.fields || [];
+        renderMapping();
+      },
+      error: (err) => alert('Could not read CSV: ' + err.message)
+    });
+  }
+
+  function guessColumn(fieldKey) {
+    const norm = s => s.toLowerCase().replace(/[^a-z]/g, '');
+    const target = norm(fieldKey);
+    let best = '';
+    for (const h of csvHeaders) {
+      const nh = norm(h);
+      if (nh === target || nh.includes(target) || target.includes(nh)) {
+        best = h;
+        break;
+      }
+    }
+    return best;
+  }
+
+  function renderMapping() {
+    const wrap = document.getElementById('importMapping');
+    wrap.style.display = 'block';
+
+    const rows = LEAD_FIELDS.map(f => {
+      const guess = guessColumn(f.key);
+      const options = ['<option value="">— Skip —</option>']
+        .concat(csvHeaders.map(h => `<option value="${h}" ${h === guess ? 'selected' : ''}>${h}</option>`))
+        .join('');
+      return `
+        <div class="map-row">
+          <label>${f.label}</label>
+          <select id="map_${f.key}">${options}</select>
+        </div>
+      `;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div class="import-preview">${csvRows.length} rows found. Map your columns below, then import.</div>
+      ${rows}
+      <div class="checkbox-row">
+        <input type="checkbox" id="importSendReviews">
+        <span>Also send review requests for jobs completed in the last 30 days</span>
+      </div>
+      <button onclick="runImport()" style="margin-top:14px;">Import ${csvRows.length} rows</button>
+    `;
+  }
+
+  function toDateString(val) {
+    if (!val) return null;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  }
+
+  function toNumberOrNull(val) {
+    if (!val) return null;
+    const n = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+    return isNaN(n) ? null : n;
+  }
+
+  async function runImport() {
+    const mapping = {};
+    LEAD_FIELDS.forEach(f => {
+      mapping[f.key] = document.getElementById(`map_${f.key}`).value;
+    });
+    const sendReviews = document.getElementById('importSendReviews').checked;
+
+    const rowsToInsert = csvRows.map(row => {
+      const get = key => mapping[key] ? row[mapping[key]] : null;
+
+      let completedAt = toDateString(get('job_completed_at'));
+      if (!sendReviews) {
+        // Hold back from the review loop by default: still store the date,
+        // but only if it's clearly in the past AND opted in. If not opted in,
+        // we don't clear historical data, we just don't want fresh emails firing —
+        // review loop already requires contact_email, so leaving this as-is is safe
+        // for old records. For very recent ones, respect the checkbox strictly:
+        const recvDate = completedAt ? new Date(completedAt) : null;
+        const daysSince = recvDate ? (Date.now() - recvDate.getTime()) / 86400000 : null;
+        if (daysSince !== null && daysSince < 30) {
+          completedAt = null;
+        }
+      }
+
+      return {
+        contact_name: get('contact_name') || null,
+        contact_phone: get('contact_phone') || null,
+        contact_email: get('contact_email') || null,
+        source: (get('source') || 'historical').toLowerCase(),
+        loss_type: get('loss_type') || null,
+        assigned_to: get('assigned_to') || null,
+        job_value: toNumberOrNull(get('job_value')),
+        status: get('status') || 'new',
+        received_at: toDateString(get('received_at')) || new Date().toISOString(),
+        job_completed_at: completedAt,
+        notes: get('notes') || null,
+        raw_details: JSON.stringify(row)
+      };
+    });
+
+    const batchSize = 50;
+    let inserted = 0;
+    for (let i = 0; i < rowsToInsert.length; i += batchSize) {
+      const batch = rowsToInsert.slice(i, i + batchSize);
+      const { error } = await sb.from('leads').insert(batch);
+      if (error) {
+        alert(`Import stopped after ${inserted} rows: ${error.message}`);
+        return;
+      }
+      inserted += batch.length;
+    }
+
+    alert(`Imported ${inserted} leads successfully.`);
+    document.getElementById('importMapping').style.display = 'none';
+    document.getElementById('csvFile').value = '';
     loadData();
   }
 
