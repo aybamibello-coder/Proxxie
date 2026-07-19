@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>O'yemi Photography</title>
+<title>O'yemi Creative Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -94,11 +94,17 @@
   .hero{
     position:relative; height:100vh; min-height:640px;
     display:flex; align-items:flex-end;
+    overflow:hidden;
+  }
+  .hero-bg{
+    position:absolute; inset:-8% 0; z-index:0;
     background:
       linear-gradient(180deg, rgba(22,20,28,0.15) 0%, rgba(22,20,28,0.85) 100%),
       url('https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?w=1800&h=2200&fit=crop&q=80&auto=format') center/cover no-repeat;
+    will-change:transform;
   }
   .hero-inner{
+    position:relative; z-index:1;
     padding:0 6vw 7vw;
     width:100%;
   }
@@ -106,10 +112,26 @@
     font-size:clamp(64px, 14vw, 168px);
     letter-spacing:0.01em;
     color:var(--paper);
+    opacity:0; transform:translateY(28px);
+    animation:heroIn 1s cubic-bezier(0.16,1,0.3,1) 0.15s forwards;
+  }
+  @keyframes heroIn{
+    to{opacity:1; transform:translateY(0);}
+  }
+  .hero h1 .hero-sub{
+    display:block;
+    font-size:clamp(18px, 3vw, 34px);
+    font-family:'Jost', sans-serif;
+    font-weight:300;
+    letter-spacing:0.32em;
+    color:var(--gold);
+    margin-top:10px;
   }
   .hero-tagline{
     display:flex; align-items:center; gap:18px; margin-top:18px;
     flex-wrap:wrap;
+    opacity:0; transform:translateY(20px);
+    animation:heroIn 1s cubic-bezier(0.16,1,0.3,1) 0.5s forwards;
   }
   .hero-tagline span{
     font-size:14px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim);
@@ -279,6 +301,24 @@
   }
   footer .wordmark{font-size:16px;}
 
+  /* ---------- SCROLL REVEAL ---------- */
+  .reveal{
+    opacity:0; transform:translateY(36px);
+    transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.is-visible{opacity:1; transform:translateY(0);}
+  .reveal-stagger > *{
+    opacity:0; transform:translateY(28px);
+    transition:opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-stagger.is-visible > *{opacity:1; transform:translateY(0);}
+  .reveal-stagger.is-visible > *:nth-child(1){transition-delay:0s;}
+  .reveal-stagger.is-visible > *:nth-child(2){transition-delay:0.08s;}
+  .reveal-stagger.is-visible > *:nth-child(3){transition-delay:0.16s;}
+  .reveal-stagger.is-visible > *:nth-child(4){transition-delay:0.24s;}
+  .reveal-stagger.is-visible > *:nth-child(5){transition-delay:0.32s;}
+  .reveal-stagger.is-visible > *:nth-child(6){transition-delay:0.4s;}
+
   /* ---------- MOBILE PASS ---------- */
   @media (max-width:760px){
     section{padding:90px 6vw;}
@@ -324,8 +364,9 @@
 </div>
 
 <header class="hero">
+  <div class="hero-bg" id="heroBg"></div>
   <div class="hero-inner">
-    <h1>O'YEMI</h1>
+    <h1>O'YEMI<br><span class="hero-sub">CREATIVE STUDIO</span></h1>
     <div class="hero-tagline">
       <span>Portraits</span><div class="dot"></div>
       <span>Weddings &amp; Events</span><div class="dot"></div>
@@ -337,10 +378,10 @@
 </header>
 
 <section id="about" class="about">
-  <div class="about-portrait">
+  <div class="about-portrait reveal">
     <img src="https://images.unsplash.com/photo-1593351799227-75df2026356b?w=900&h=1125&fit=crop&q=80&auto=format" alt="">
   </div>
-  <div class="about-copy">
+  <div class="about-copy reveal">
     <span class="eyebrow">About</span>
     <h2>Every frame is someone's memory before it's anyone's image.</h2>
     <p>Oyemi works across portraits, weddings, events, and fashion — moving between quiet, considered sittings and the fast, unrepeatable moments of a live event. The throughline is the same either way: pay attention, wait for the real thing, and leave the rest out of the frame.</p>
@@ -359,18 +400,18 @@
 </section>
 
 <section id="work">
-  <div class="section-head">
+  <div class="section-head reveal">
     <h2>Selected Work</h2>
     <p>A working archive — placeholder frames for now, swapped for the real thing as it's shot.</p>
   </div>
 
-  <div class="work-category">
+  <div class="work-category reveal">
     <div class="work-label">
       <h3>Portraits</h3>
       <span class="eyebrow">01</span>
     </div>
     <p class="work-desc">Considered, one-on-one sittings — studio and natural light.</p>
-    <div class="work-grid">
+    <div class="work-grid reveal-stagger">
       <div class="frame"><img src="https://images.unsplash.com/photo-1647316897340-6b6de5597c0f?w=1200&h=750&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1530785602389-07594beb8b73?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
@@ -378,26 +419,26 @@
     </div>
   </div>
 
-  <div class="work-category">
+  <div class="work-category reveal">
     <div class="work-label">
       <h3>Weddings &amp; Events</h3>
       <span class="eyebrow">02</span>
     </div>
     <p class="work-desc">Full-day coverage — the room, the light, the people in it.</p>
-    <div class="work-grid">
+    <div class="work-grid reveal-stagger">
       <div class="frame"><img src="https://images.unsplash.com/photo-1645827042168-4fb0cdd0bf7e?w=700&h=875&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1661332306744-70f9ed1a7f40?w=700&h=875&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1606495186270-395860907235?w=1500&h=650&fit=crop&q=80&auto=format" alt=""></div>
     </div>
   </div>
 
-  <div class="work-category">
+  <div class="work-category reveal">
     <div class="work-label">
       <h3>Fashion</h3>
       <span class="eyebrow">03</span>
     </div>
     <p class="work-desc">Editorial and lookbook work, shot on location and in studio.</p>
-    <div class="work-grid">
+    <div class="work-grid reveal-stagger">
       <div class="frame"><img src="https://images.unsplash.com/photo-1696962678565-bee84e6b9cb6?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1708170236215-b6edcad7f49a?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
       <div class="frame"><img src="https://images.unsplash.com/photo-1667366925513-573975457271?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
@@ -406,14 +447,14 @@
 </section>
 
 <section id="contact" class="contact">
-  <div class="contact-info">
+  <div class="contact-info reveal">
     <span class="eyebrow">Get in touch</span>
     <h2>Tell me about the day, the shoot, or the idea.</h2>
     <div class="contact-line"><span>Email</span><a href="mailto:afeizbello@gmail.com">afeizbello@gmail.com</a></div>
     <div class="contact-line"><span>Phone</span><a href="tel:+2349034639810">+234 903 463 9810</a></div>
     <div class="contact-line"><span>Instagram</span><a href="https://instagram.com/oyemi_studio" target="_blank" rel="noopener">@oyemi_studio</a></div>
   </div>
-  <form id="inquiryForm">
+  <form id="inquiryForm" class="reveal">
     <div class="field">
       <label for="name">Name</label>
       <input type="text" id="name" required>
@@ -440,7 +481,7 @@
   </form>
 </section>
 
-<div class="studio">
+<div class="studio reveal">
   <div class="studio-head">
     <div>
       <span class="eyebrow">Studio access</span>
@@ -459,11 +500,46 @@
 
 <footer>
   <div class="wordmark">O'yemi</div>
-  <div>&copy; <span id="year"></span> O'yemi Photography</div>
+  <div>&copy; <span id="year"></span> O'yemi Creative Studio</div>
 </footer>
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Scroll reveal ----
+  if (prefersReducedMotion) {
+    document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => el.classList.add('is-visible'));
+  } else {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -60px 0px' });
+    document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => revealObserver.observe(el));
+  }
+
+  // ---- Hero parallax ----
+  const heroBg = document.getElementById('heroBg');
+  if (heroBg && !prefersReducedMotion) {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          if (y < window.innerHeight) {
+            heroBg.style.transform = `translateY(${y * 0.25}px)`;
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+  }
 
   // ---- Mobile nav ----
   const navToggle = document.getElementById('navToggle');
