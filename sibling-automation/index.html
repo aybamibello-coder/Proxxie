@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact Sheet — Upload Queue</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14120f;
+    --panel:#1e1a16;
+    --panel-border:#332920;
+    --amber:#e8a33d;
+    --amber-dim:#b97f2b;
+    --red:#c1432e;
+    --green:#7fa36b;
+    --text:#f2ede4;
+    --text-dim:#a69a8a;
+    --sprocket:#0e0c0a;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(232,163,61,0.05), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(193,67,46,0.05), transparent 40%);
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:48px 24px 80px;}
+
+  header{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:8px; flex-wrap:wrap; gap:12px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand-mark{
+    width:34px; height:34px; border:2px solid var(--amber); border-radius:50%;
+    position:relative; flex-shrink:0;
+  }
+  .brand-mark::after{
+    content:''; position:absolute; inset:8px; border-radius:50%; background:var(--amber);
+  }
+  h1{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-weight:800;
+    font-size:clamp(28px, 5vw, 40px);
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    line-height:1;
+  }
+  .tagline{color:var(--text-dim); font-size:13px; letter-spacing:0.03em;}
+  .roll-counter{
+    font-size:12px; color:var(--text-dim); text-align:right; letter-spacing:0.08em;
+  }
+  .roll-counter strong{color:var(--amber); font-size:16px; display:block;}
+
+  .filmstrip-rule{
+    height:14px; margin:28px 0 32px;
+    background-image: repeating-linear-gradient(90deg, var(--sprocket) 0 6px, transparent 6px 16px);
+    background-position:center;
+    background-size:16px 6px;
+    background-repeat:repeat-x;
+    border-top:1px solid var(--panel-border);
+    border-bottom:1px solid var(--panel-border);
+    position:relative;
+  }
+
+  .dropzone{
+    border:2px dashed var(--panel-border);
+    border-radius:4px;
+    background:var(--panel);
+    padding:56px 24px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color 0.15s ease, background 0.15s ease;
+    position:relative;
+  }
+  .dropzone.drag-over{
+    border-color:var(--amber);
+    background:#25201a;
+  }
+  .dropzone .glyph{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:48px; font-weight:700; color:var(--amber-dim); line-height:1;
+    margin-bottom:12px;
+  }
+  .dropzone p{color:var(--text-dim); font-size:14px; line-height:1.6;}
+  .dropzone .accent{color:var(--amber);}
+  .dropzone input[type=file]{display:none;}
+
+  .queue-header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin:44px 0 14px;
+  }
+  .queue-header h2{
+    font-family:'Big Shoulders Display', sans-serif;
+    font-size:18px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-dim);
+  }
+  .queue-header span{font-size:11px; color:var(--text-dim);}
+
+  .empty-state{
+    border:1px solid var(--panel-border); border-radius:4px; padding:28px;
+    color:var(--text-dim); font-size:13px; text-align:center;
+  }
+
+  .frame{
+    display:grid;
+    grid-template-columns:64px 1fr auto;
+    gap:16px;
+    align-items:center;
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:4px;
+    padding:12px;
+    margin-bottom:8px;
+    animation:slide-in 0.3s ease;
+  }
+  @keyframes slide-in{ from{opacity:0; transform:translateX(-8px);} to{opacity:1; transform:translateX(0);} }
+
+  .frame-thumb{
+    width:64px; height:64px; border-radius:2px; overflow:hidden;
+    background:#0e0c0a; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; border:1px solid var(--panel-border);
+  }
+  .frame-thumb img, .frame-thumb video{width:100%; height:100%; object-fit:cover;}
+  .frame-thumb .kind{font-size:10px; color:var(--text-dim);}
+
+  .frame-info{min-width:0;}
+  .frame-name{font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .frame-meta{font-size:11px; color:var(--text-dim); margin-top:4px;}
+
+  .status-pill{
+    font-size:10px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:5px 10px; border-radius:999px; white-space:nowrap;
+    border:1px solid transparent;
+  }
+  .status-processing{color:var(--amber); border-color:var(--amber-dim); background:rgba(232,163,61,0.08);}
+  .status-pending_review{color:#d8c98a; border-color:#8a7a3f; background:rgba(216,201,138,0.08);}
+  .status-approved{color:var(--green); border-color:var(--green); background:rgba(127,163,107,0.08);}
+  .status-posted{color:var(--green); border-color:var(--green); background:rgba(127,163,107,0.14);}
+  .status-rejected, .status-failed{color:var(--red); border-color:var(--red); background:rgba(193,67,46,0.08);}
+
+  footer{margin-top:56px; text-align:center; font-size:11px; color:var(--text-dim); letter-spacing:0.03em;}
+
+  @media (prefers-reduced-motion: reduce){
+    .frame{animation:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <h1>Contact Sheet</h1>
+        <div class="tagline">Drop shots in. We pick, caption, and queue them for review.</div>
+      </div>
+    </div>
+    <div class="roll-counter">
+      ON THIS ROLL
+      <strong id="rollCount">0</strong>
+    </div>
+  </header>
+
+  <div class="filmstrip-rule"></div>
+
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" multiple accept="image/*,video/*">
+    <div class="glyph">+</div>
+    <p>Drag photos or videos here, or <span class="accent">tap to browse</span>.<br>
+    Anything you drop gets reviewed by AI, then sent to your Telegram for approval before it goes anywhere.</p>
+  </div>
+
+  <div class="queue-header">
+    <h2>Queue</h2>
+    <span id="queueHint">Loading recent uploads…</span>
+  </div>
+
+  <div id="queueList"></div>
+
+  <footer>Files are held privately until you approve them in Telegram. Nothing posts on its own.</footer>
+</div>
+
+<script>
+  // ---- Config ----
+  const SUPABASE_URL = 'https://kpzsocqnjnzfxptktzqo.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwenNvY3Fuam56ZnhwdGt0enFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMzg3ODIsImV4cCI6MjA5OTcxNDc4Mn0.UwB-XCTXKcJ3lXFWK_B4rzwgTRDNg0ysGfqRNkB-aJA';
+  const BUCKET = 'sibling-uploads';
+  // Set this once the n8n workflow (step 2) is live. Until then uploads still save fine —
+  // this call is wrapped so a missing webhook never blocks the upload itself.
+  const N8N_WEBHOOK_URL = 'https://n8n-service-kfvx.onrender.com/webhook/sibling-new-upload';
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const queueList = document.getElementById('queueList');
+  const queueHint = document.getElementById('queueHint');
+  const rollCount = document.getElementById('rollCount');
+
+  const frames = new Map(); // id -> record, in-memory only
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+  ['dragenter','dragover'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('drag-over'); })
+  );
+  ['dragleave','drop'].forEach(evt =>
+    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('drag-over'); })
+  );
+  dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+  function fmtBytes(b){
+    if (b < 1024*1024) return (b/1024).toFixed(0) + ' KB';
+    return (b/(1024*1024)).toFixed(1) + ' MB';
+  }
+
+  function renderQueue(){
+    const list = Array.from(frames.values()).sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    rollCount.textContent = list.length;
+    if (list.length === 0){
+      queueList.innerHTML = '<div class="empty-state">Nothing on the roll yet. Drop a file above to get started.</div>';
+      return;
+    }
+    queueList.innerHTML = list.map(f => `
+      <div class="frame">
+        <div class="frame-thumb">
+          ${f.file_type === 'image'
+            ? `<img src="${f.storage_url}" alt="">`
+            : `<span class="kind">VIDEO</span>`}
+        </div>
+        <div class="frame-info">
+          <div class="frame-name">${f.file_path.split('/').pop()}</div>
+          <div class="frame-meta">${f.file_type.toUpperCase()} · ${new Date(f.created_at).toLocaleString()}</div>
+        </div>
+        <div class="status-pill status-${f.status}">${statusLabel(f.status)}</div>
+      </div>
+    `).join('');
+  }
+
+  function statusLabel(s){
+    return {
+      processing: 'Developing…',
+      pending_review: 'Sent for review',
+      approved: 'Approved',
+      posted: 'Posted',
+      rejected: 'Rejected',
+      failed: 'Failed'
+    }[s] || s;
+  }
+
+  async function handleFiles(fileList){
+    for (const file of Array.from(fileList)){
+      await uploadOne(file);
+    }
+  }
+
+  async function uploadOne(file){
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+    if (!isVideo && !isImage) return;
+
+    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
+
+    // 1. Upload the raw file to Supabase Storage
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': file.type
+      },
+      body: file
+    });
+
+    if (!uploadRes.ok){
+      console.error('Upload failed', await uploadRes.text());
+      return;
+    }
+
+    const storageUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+
+    // 2. Insert a tracking row
+    const insertRes = await fetch(`${SUPABASE_URL}/rest/v1/sibling_posts`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({
+        file_path: path,
+        file_type: isVideo ? 'video' : 'image',
+        storage_url: storageUrl,
+        status: 'processing'
+      })
+    });
+
+    if (!insertRes.ok){
+      console.error('Insert failed', await insertRes.text());
+      return;
+    }
+
+    const [record] = await insertRes.json();
+    frames.set(record.id, record);
+    renderQueue();
+
+    // 3. Kick off the automation (safe no-op if the workflow isn't live yet)
+    fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ id: record.id, storage_url: storageUrl, file_type: record.file_type })
+    }).catch(() => {});
+  }
+
+  async function loadRecent(){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/sibling_posts?select=*&order=created_at.desc&limit=30`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+      const rows = await res.json();
+      rows.forEach(r => frames.set(r.id, r));
+      queueHint.textContent = 'Updates every few seconds';
+      renderQueue();
+    } catch(e){
+      queueHint.textContent = 'Could not load queue';
+    }
+  }
+
+  // Poll for status changes (e.g. once n8n moves a row from "processing" to "pending_review")
+  async function pollUpdates(){
+    if (frames.size === 0) return;
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/sibling_posts?select=*&order=created_at.desc&limit=30`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+      const rows = await res.json();
+      rows.forEach(r => frames.set(r.id, r));
+      renderQueue();
+    } catch(e){ /* silent - will retry next tick */ }
+  }
+
+  loadRecent();
+  setInterval(pollUpdates, 5000);
+</script>
+</body>
+</html>
