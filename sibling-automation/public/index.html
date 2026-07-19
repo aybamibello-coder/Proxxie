@@ -50,8 +50,9 @@
   nav{
     position:fixed; top:0; left:0; right:0; z-index:100;
     display:flex; justify-content:space-between; align-items:center;
-    padding:28px 6vw;
-    mix-blend-mode:difference;
+    padding:22px 6vw;
+    background:linear-gradient(180deg, rgba(22,20,28,0.55) 0%, rgba(22,20,28,0) 100%);
+    backdrop-filter:blur(2px);
   }
   .wordmark{
     font-family:'Cormorant', serif; font-style:italic; font-weight:500;
@@ -63,10 +64,30 @@
     padding-bottom:3px; border-bottom:1px solid transparent; transition:border-color 0.2s ease;
   }
   .nav-links a:hover{border-color:var(--paper);}
-  .nav-toggle{display:none;}
+
+  .nav-toggle{
+    display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer;
+    padding:6px; z-index:200;
+  }
+  .nav-toggle span{width:22px; height:1px; background:var(--paper); display:block; transition:transform 0.2s ease, opacity 0.2s ease;}
+  .nav-toggle.open span:nth-child(1){transform:translateY(6px) rotate(45deg);}
+  .nav-toggle.open span:nth-child(2){opacity:0;}
+  .nav-toggle.open span:nth-child(3){transform:translateY(-6px) rotate(-45deg);}
+
+  .mobile-nav{
+    display:none; position:fixed; inset:0; z-index:150;
+    background:var(--ink); flex-direction:column; align-items:center; justify-content:center; gap:32px;
+    opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+  }
+  .mobile-nav.open{opacity:1; pointer-events:auto;}
+  .mobile-nav a{
+    font-family:'Cormorant', serif; font-size:32px; color:var(--paper);
+  }
 
   @media (max-width:720px){
     .nav-links{display:none;}
+    .nav-toggle{display:flex;}
+    .mobile-nav{display:flex;}
   }
 
   /* ---------- HERO ---------- */
@@ -75,7 +96,7 @@
     display:flex; align-items:flex-end;
     background:
       linear-gradient(180deg, rgba(22,20,28,0.15) 0%, rgba(22,20,28,0.85) 100%),
-      url('https://picsum.photos/seed/oyemi-hero/1800/2200') center/cover no-repeat;
+      url('https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?w=1800&h=2200&fit=crop&q=80&auto=format') center/cover no-repeat;
   }
   .hero-inner{
     padding:0 6vw 7vw;
@@ -257,6 +278,29 @@
     border-top:1px solid var(--line); font-size:12px; color:var(--text-dim); flex-wrap:wrap; gap:12px;
   }
   footer .wordmark{font-size:16px;}
+
+  /* ---------- MOBILE PASS ---------- */
+  @media (max-width:760px){
+    section{padding:90px 6vw;}
+    .hero{min-height:560px;}
+    .hero-inner{padding:0 6vw 12vw;}
+    .hero-tagline{gap:12px;}
+    .hero-tagline span{font-size:12px;}
+    .scroll-cue{display:none;}
+    .section-head{margin-bottom:36px;}
+    .about-stats{flex-wrap:wrap; row-gap:20px;}
+    .work-category{margin-bottom:64px;}
+    .work-label{flex-wrap:wrap; row-gap:6px;}
+    .contact{padding:90px 6vw;}
+    .contact-line{flex-direction:column; align-items:flex-start; gap:4px;}
+    .studio{padding:56px 6vw;}
+    .studio-note{text-align:left; max-width:none;}
+  }
+
+  @media (max-width:420px){
+    .hero h1{letter-spacing:0;}
+    .about-portrait::after{outline-width:8px;}
+  }
 </style>
 </head>
 <body>
@@ -268,7 +312,16 @@
     <a href="#about">About</a>
     <a href="#contact">Contact</a>
   </div>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<div class="mobile-nav" id="mobileNav">
+  <a href="#work">Work</a>
+  <a href="#about">About</a>
+  <a href="#contact">Contact</a>
+</div>
 
 <header class="hero">
   <div class="hero-inner">
@@ -285,7 +338,7 @@
 
 <section id="about" class="about">
   <div class="about-portrait">
-    <img src="https://picsum.photos/seed/oyemi-portrait/900/1125" alt="">
+    <img src="https://images.unsplash.com/photo-1593351799227-75df2026356b?w=900&h=1125&fit=crop&q=80&auto=format" alt="">
   </div>
   <div class="about-copy">
     <span class="eyebrow">About</span>
@@ -318,10 +371,10 @@
     </div>
     <p class="work-desc">Considered, one-on-one sittings — studio and natural light.</p>
     <div class="work-grid">
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-portrait-a/1200/750" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-portrait-b/700/900" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-portrait-c/700/900" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-portrait-d/1200/700" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1647316897340-6b6de5597c0f?w=1200&h=750&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1530785602389-07594beb8b73?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1522938974444-f12497b69347?w=1200&h=700&fit=crop&q=80&auto=format" alt=""></div>
     </div>
   </div>
 
@@ -332,9 +385,9 @@
     </div>
     <p class="work-desc">Full-day coverage — the room, the light, the people in it.</p>
     <div class="work-grid">
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-wed-a/700/875" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-wed-b/700/875" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-wed-c/1500/650" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1645827042168-4fb0cdd0bf7e?w=700&h=875&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1661332306744-70f9ed1a7f40?w=700&h=875&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1606495186270-395860907235?w=1500&h=650&fit=crop&q=80&auto=format" alt=""></div>
     </div>
   </div>
 
@@ -345,9 +398,9 @@
     </div>
     <p class="work-desc">Editorial and lookbook work, shot on location and in studio.</p>
     <div class="work-grid">
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-fashion-a/700/900" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-fashion-b/700/900" alt=""></div>
-      <div class="frame"><img src="https://picsum.photos/seed/oyemi-fashion-c/700/900" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1696962678565-bee84e6b9cb6?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1708170236215-b6edcad7f49a?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
+      <div class="frame"><img src="https://images.unsplash.com/photo-1667366925513-573975457271?w=700&h=900&fit=crop&q=80&auto=format" alt=""></div>
     </div>
   </div>
 </section>
@@ -411,6 +464,20 @@
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  // ---- Mobile nav ----
+  const navToggle = document.getElementById('navToggle');
+  const mobileNav = document.getElementById('mobileNav');
+  navToggle.addEventListener('click', () => {
+    const isOpen = mobileNav.classList.toggle('open');
+    navToggle.classList.toggle('open', isOpen);
+    navToggle.setAttribute('aria-expanded', isOpen);
+  });
+  mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    mobileNav.classList.remove('open');
+    navToggle.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }));
 
   // ---- Contact form -> Supabase ----
   const SUPABASE_URL = 'https://kpzsocqnjnzfxptktzqo.supabase.co';
